@@ -1,0 +1,12 @@
+{
+  "name": "life-quest-bot",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "grammy": "^1.31.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

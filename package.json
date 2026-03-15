@@ -1,0 +1,14 @@
+{
+  "name": "life-quest",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd api && npx tsx src/index.ts",
+    "build:webapp": "cd webapp && npx vite build",
+    "start": "cd api && node dist/index.js"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "@vitejs/plugin-react": "^4.3.0"
+  }
+}
