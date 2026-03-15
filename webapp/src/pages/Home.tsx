@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useStore } from '../store';
 import { getUser } from '../services/storage';
 import { ProgressBar } from '../components/ProgressBar';
+import { PixelHero } from '../components/PixelHero';
 
 export function Home() {
   const { user, setUser, setTab } = useStore();
@@ -22,31 +23,33 @@ export function Home() {
     <div className="p-4 pb-20">
       <h1 className="text-2xl font-bold text-gray-900 mb-4">🎮 Life Quest</h1>
 
-      {/* Stats Card */}
+      {/* Hero + Stats Card */}
       <div className="bg-gradient-to-br from-primary-500 via-primary-600 to-indigo-600 rounded-2xl p-5 text-white shadow-lg mb-6">
-        <div className="flex justify-between items-start mb-4">
-          <div>
+        <div className="flex items-center gap-4 mb-4">
+          {/* Pixel Hero */}
+          <div className="shrink-0 bg-white/10 rounded-xl p-2">
+            <PixelHero level={user.level} />
+          </div>
+          
+          <div className="flex-1">
             <h2 className="text-lg font-bold">{user.display_name || 'Герой'}</h2>
             <p className="text-white/70 text-sm">Уровень {user.level}</p>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold">💰 {user.points_balance}</div>
-            <p className="text-white/70 text-xs">поинтов</p>
+            <div className="text-xl font-bold mt-1">💰 {user.points_balance}</div>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold">{user.level}</div>
-            <div className="text-xs text-white/70">Уровень</div>
+          <div className="text-center bg-white/10 rounded-xl py-2">
+            <div className="text-xl font-bold">{user.level}</div>
+            <div className="text-[10px] text-white/70">Уровень</div>
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold">{user.streak}</div>
-            <div className="text-xs text-white/70">Дней подряд</div>
+          <div className="text-center bg-white/10 rounded-xl py-2">
+            <div className="text-xl font-bold">{user.streak}</div>
+            <div className="text-[10px] text-white/70">Стрик</div>
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold">{user.best_streak}</div>
-            <div className="text-xs text-white/70">Лучший стрик</div>
+          <div className="text-center bg-white/10 rounded-xl py-2">
+            <div className="text-xl font-bold">{user.best_streak}</div>
+            <div className="text-[10px] text-white/70">Лучший</div>
           </div>
         </div>
 

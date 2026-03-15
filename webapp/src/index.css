@@ -33,6 +33,15 @@ body {
   flex-direction: column;
 }
 
+/* Hero breathing animation */
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.animate-bounce-slow {
+  animation: bounce-slow 2s ease-in-out infinite;
+}
+
 /* Hide scrollbar for category filter */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
