@@ -1,23 +1,14 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api/client';
+import { getStats, getHistory } from '../services/storage';
 
 export function Stats() {
   const [stats, setStats] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
-    loadStats();
+    setStats(getStats());
+    setHistory(getHistory(30));
   }, []);
-
-  async function loadStats() {
-    try {
-      const [s, h] = await Promise.all([api.getStats(), api.getHistory(30)]);
-      setStats(s);
-      setHistory(h);
-    } catch (err) {
-      console.error(err);
-    }
-  }
 
   if (!stats) {
     return (
@@ -31,7 +22,6 @@ export function Stats() {
     <div className="p-4 pb-20">
       <h1 className="text-xl font-bold text-gray-900 mb-4">📊 Статистика</h1>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 mb-6">
         <StatCard icon="🎯" label="Челленджей" value={stats.total_challenges_completed} />
         <StatCard icon="⭐" label="Всего XP" value={stats.total_xp_earned} />
@@ -39,7 +29,6 @@ export function Stats() {
         <StatCard icon="🎁" label="Наград куплено" value={stats.total_rewards_purchased} />
       </div>
 
-      {/* Category progress */}
       <h2 className="font-semibold text-gray-900 mb-3">Прогресс по категориям</h2>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
         {stats.categories_progress.map((cp: any) => (
@@ -56,7 +45,6 @@ export function Stats() {
         ))}
       </div>
 
-      {/* History */}
       <h2 className="font-semibold text-gray-900 mb-3">Последние выполнения</h2>
       {history.length === 0 ? (
         <div className="text-center text-gray-400 py-8">

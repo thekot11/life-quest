@@ -1,26 +1,14 @@
 import { useEffect } from 'react';
 import { useStore } from '../store';
-import { api } from '../api/client';
+import { getUser } from '../services/storage';
 import { ProgressBar } from '../components/ProgressBar';
 
 export function Home() {
-  const { user, setUser, challenges, setTab, setLoading } = useStore();
+  const { user, setUser, setTab } = useStore();
 
   useEffect(() => {
-    loadUser();
+    setUser(getUser());
   }, []);
-
-  async function loadUser() {
-    try {
-      setLoading(true);
-      const u = await api.getUser();
-      setUser(u);
-    } catch (err) {
-      console.error('Failed to load user:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   if (!user) {
     return (
@@ -30,11 +18,8 @@ export function Home() {
     );
   }
 
-  const todayCompleted = 0; // Could track from challenges
-
   return (
     <div className="p-4 pb-20">
-      {/* Header */}
       <h1 className="text-2xl font-bold text-gray-900 mb-4">🎮 Life Quest</h1>
 
       {/* Stats Card */}
@@ -50,7 +35,6 @@ export function Home() {
           </div>
         </div>
 
-        {/* Stats row */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="text-center">
             <div className="text-2xl font-bold">{user.level}</div>
@@ -93,7 +77,6 @@ export function Home() {
         </button>
       </div>
 
-      {/* Streak motivation */}
       {user.streak > 0 && (
         <div className="mt-4 bg-orange-50 border border-orange-100 rounded-2xl p-4">
           <div className="flex items-center gap-2">

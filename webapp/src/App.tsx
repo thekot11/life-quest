@@ -5,11 +5,15 @@ import { Home } from './pages/Home';
 import { Challenges } from './pages/Challenges';
 import { Rewards } from './pages/Rewards';
 import { Stats } from './pages/Stats';
+import { initStorage } from './services/storage';
 
 function App() {
   const { tab } = useStore();
 
   useEffect(() => {
+    // Init localStorage seed data
+    initStorage();
+    
     // Initialize Telegram WebApp
     try {
       const tg = (window as any).Telegram?.WebApp;
