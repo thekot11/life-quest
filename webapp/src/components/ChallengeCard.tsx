@@ -2,6 +2,8 @@ interface Props {
   challenge: any;
   onComplete: (id: number) => void;
   onDelete: (id: number) => void;
+  isConfirming?: boolean;
+  isPending?: boolean;
 }
 
 const diffColors: Record<string, string> = {
@@ -16,9 +18,11 @@ const diffLabels: Record<string, string> = {
   hard: 'Сложный',
 };
 
-export function ChallengeCard({ challenge, onComplete, onDelete }: Props) {
+export function ChallengeCard({ challenge, onComplete, onDelete, isConfirming, isPending }: Props) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-3">
+    <div className={`bg-white rounded-2xl shadow-sm border p-4 mb-3 transition-all ${
+      isPending ? 'border-orange-300 opacity-60' : isConfirming ? 'border-primary-300' : 'border-gray-100'
+    }`}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
@@ -33,8 +37,8 @@ export function ChallengeCard({ challenge, onComplete, onDelete }: Props) {
               {diffLabels[challenge.difficulty] || 'Средний'}
             </span>
             <span className="text-xs text-gray-400">⭐ {challenge.xp_reward} XP</span>
-            {challenge.source === 'ai' && (
-              <span className="text-xs text-purple-400">🤖 AI</span>
+            {challenge.source === 'generated' && (
+              <span className="text-xs text-purple-400">🎲</span>
             )}
           </div>
         </div>
@@ -42,9 +46,16 @@ export function ChallengeCard({ challenge, onComplete, onDelete }: Props) {
       <div className="flex gap-2 mt-3">
         <button
           onClick={() => onComplete(challenge.id)}
-          className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-sm font-medium py-2 rounded-xl active:scale-95 transition-transform"
+          disabled={isPending}
+          className={`flex-1 text-white text-sm font-medium py-2 rounded-xl active:scale-95 transition-all ${
+            isPending
+              ? 'bg-orange-400 cursor-not-allowed'
+              : isConfirming
+              ? 'bg-gradient-to-r from-green-500 to-green-600 animate-pulse'
+              : 'bg-gradient-to-r from-primary-500 to-primary-600'
+          }`}
         >
-          ✅ Выполнено
+          {isPending ? '⏳ Отмена доступна...' : isConfirming ? '⚡ Точно выполнено?' : '✅ Выполнено'}
         </button>
         <button
           onClick={() => onDelete(challenge.id)}

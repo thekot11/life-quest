@@ -402,6 +402,47 @@ export function deleteReward(rewardId: number): void {
   save('lq_rewards', all.filter(r => r.id !== rewardId));
 }
 
+// === Undo completion ===
+export function undoCompletion(completionId: number): void {
+  const completions = load<Completion[]>('lq_completions', []);
+  const idx = completions.findIndex(c => c.id === completionId);
+  if (idx === -1) return;
+
+  const comp = completions[idx];
+  const user = getUser();
+
+  // Reverse XP and points
+  let newXp = user.xp - comp.xp_earned;
+  let newLevel = user.level;
+
+  // Handle level-down
+  while (newXp < 0 && newLevel > 1) {
+    newLevel--;
+    newXp += xpForLevel(newLevel);
+  }
+  if (newXp < 0) newXp = 0;
+
+  user.xp = newXp;
+  user.total_xp = Math.max(0, user.total_xp - comp.xp_earned);
+  user.level = newLevel;
+  user.xp_to_next = xpForLevel(newLevel);
+  user.points_balance = Math.max(0, user.points_balance - comp.points_earned);
+  user.points_total_earned = Math.max(0, user.points_total_earned - comp.points_earned);
+  saveUser(user);
+
+  // Re-activate the challenge
+  const challenges = load<Challenge[]>('lq_challenges', []);
+  const chIdx = challenges.findIndex(c => c.id === comp.challenge_id);
+  if (chIdx !== -1) {
+    challenges[chIdx].is_active = true;
+    save('lq_challenges', challenges);
+  }
+
+  // Remove completion
+  completions.splice(idx, 1);
+  save('lq_completions', completions);
+}
+
 // === Stats ===
 export function getStats() {
   const user = getUser();

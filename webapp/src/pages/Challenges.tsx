@@ -1,13 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useStore } from '../store';
 import { getChallenges, createChallenge, generateChallenge, completeChallenge, deleteChallenge, getUser, CATEGORIES } from '../services/storage';
 import { ChallengeCard } from '../components/ChallengeCard';
+
+interface PendingCompletion {
+  challengeId: number;
+  timer: ReturnType<typeof setTimeout>;
+}
 
 export function Challenges() {
   const { challenges, setChallenges, setUser } = useStore();
   const [selectedCat, setSelectedCat] = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [pending, setPending] = useState<PendingCompletion | null>(null);
+  const [undoCountdown, setUndoCountdown] = useState(0);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
@@ -17,6 +26,13 @@ export function Challenges() {
   useEffect(() => {
     loadChallenges();
   }, [selectedCat]);
+
+  useEffect(() => {
+    return () => {
+      if (pending) clearTimeout(pending.timer);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, []);
 
   function loadChallenges() {
     setChallenges(getChallenges(selectedCat || undefined));
@@ -28,18 +44,67 @@ export function Challenges() {
     showToastMsg('🎲 Новый челлендж добавлен!');
   }
 
-  function handleComplete(id: number) {
-    try {
-      const result = completeChallenge(id);
-      loadChallenges();
-      setUser(getUser());
+  function handleCompleteClick(id: number) {
+    if (confirmId === id) {
+      // Second click — start completion with undo window
+      setConfirmId(null);
+      startCompletion(id);
+    } else {
+      // First click — ask confirmation
+      setConfirmId(id);
+      setTimeout(() => setConfirmId(null), 5000);
+    }
+  }
 
-      let msg = `✅ +${result.xp_earned} XP, +${result.points_earned} 💰`;
-      if (result.streak_multiplier > 1) msg += ` (x${result.streak_multiplier} стрик!)`;
-      if (result.leveled_up) msg += `\n🎉 Уровень ${result.new_level}!`;
-      showToastMsg(msg);
-    } catch (err: any) {
-      showToastMsg(`❌ ${err.message}`);
+  function startCompletion(id: number) {
+    // Cancel any existing pending
+    if (pending) {
+      clearTimeout(pending.timer);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    }
+
+    setUndoCountdown(3);
+    const countdown = setInterval(() => {
+      setUndoCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdown);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    countdownRef.current = countdown;
+
+    const timer = setTimeout(() => {
+      // Actually complete
+      try {
+        const result = completeChallenge(id);
+        loadChallenges();
+        setUser(getUser());
+
+        let msg = `✅ +${result.xp_earned} XP, +${result.points_earned} 💰`;
+        if (result.streak_multiplier > 1) msg += ` (x${result.streak_multiplier} стрик!)`;
+        if (result.leveled_up) msg += `\n🎉 Уровень ${result.new_level}!`;
+        showToastMsg(msg);
+      } catch (err: any) {
+        showToastMsg(`❌ ${err.message}`);
+      }
+      setPending(null);
+      setUndoCountdown(0);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    }, 3000);
+
+    setPending({ challengeId: id, timer });
+    showToastMsg('⏳ Выполнение через 3 сек... Нажми «Отмена»');
+  }
+
+  function handleUndo() {
+    if (pending) {
+      clearTimeout(pending.timer);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      setPending(null);
+      setUndoCountdown(0);
+      showToastMsg('↩️ Отменено');
     }
   }
 
@@ -73,7 +138,7 @@ export function Challenges() {
       <h1 className="text-xl font-bold text-gray-900 mb-4">🎯 Челленджи</h1>
 
       {/* Category filter */}
-      <div className="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-1 px-1">
+      <div className="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-1 px-1 scrollbar-hide">
         <button
           onClick={() => setSelectedCat(null)}
           className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
@@ -168,12 +233,30 @@ export function Challenges() {
         </div>
       ) : (
         challenges.map((ch: any) => (
-          <ChallengeCard key={ch.id} challenge={ch} onComplete={handleComplete} onDelete={handleDelete} />
+          <ChallengeCard
+            key={ch.id}
+            challenge={ch}
+            onComplete={handleCompleteClick}
+            onDelete={handleDelete}
+            isConfirming={confirmId === ch.id}
+            isPending={pending?.challengeId === ch.id}
+          />
         ))
       )}
 
-      {toast && (
-        <div className="fixed bottom-20 left-4 right-4 bg-gray-900 text-white text-sm px-4 py-3 rounded-xl text-center shadow-lg animate-fade-in z-50 whitespace-pre-line">
+      {/* Undo bar */}
+      {pending && (
+        <div className="fixed bottom-20 left-4 right-4 bg-orange-500 text-white text-sm px-4 py-3 rounded-xl flex items-center justify-between shadow-lg z-50">
+          <span>⏳ Выполняется... ({undoCountdown})</span>
+          <button onClick={handleUndo} className="bg-white/20 px-3 py-1 rounded-lg font-medium active:scale-95">
+            ↩️ Отмена
+          </button>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && !pending && (
+        <div className="fixed bottom-20 left-4 right-4 bg-gray-900 text-white text-sm px-4 py-3 rounded-xl text-center shadow-lg z-50 whitespace-pre-line">
           {toast}
         </div>
       )}

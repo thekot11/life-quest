@@ -7,6 +7,7 @@ export function Rewards() {
   const { rewards, setRewards, user, setUser } = useStore();
   const [showCreate, setShowCreate] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
 
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
@@ -18,18 +19,22 @@ export function Rewards() {
     setUser(getUser());
   }, []);
 
-  function handlePurchase(id: number) {
-    const reward = rewards.find((r: any) => r.id === id);
-    if (!reward) return;
-    if (!confirm(`Купить "${reward.title}" за ${reward.cost_points} 💰?`)) return;
-
-    try {
-      const result = purchaseReward(id);
-      setRewards(getRewards());
-      setUser(getUser());
-      showToastMsg(`🎉 Награда куплена! Осталось ${result.remaining_balance} 💰`);
-    } catch (err: any) {
-      showToastMsg(`❌ ${err.message}`);
+  function handlePurchaseClick(id: number) {
+    if (confirmId === id) {
+      // Second click — actually purchase
+      setConfirmId(null);
+      try {
+        const result = purchaseReward(id);
+        setRewards(getRewards());
+        setUser(getUser());
+        showToastMsg(`🎉 Награда куплена! Осталось ${result.remaining_balance} 💰`);
+      } catch (err: any) {
+        showToastMsg(`❌ ${err.message}`);
+      }
+    } else {
+      // First click — confirm
+      setConfirmId(id);
+      setTimeout(() => setConfirmId(null), 5000);
     }
   }
 
@@ -125,7 +130,13 @@ export function Rewards() {
         </div>
       ) : (
         rewards.map((r: any) => (
-          <RewardCard key={r.id} reward={r} userPoints={user?.points_balance || 0} onPurchase={handlePurchase} />
+          <RewardCard
+            key={r.id}
+            reward={r}
+            userPoints={user?.points_balance || 0}
+            onPurchase={handlePurchaseClick}
+            isConfirming={confirmId === r.id}
+          />
         ))
       )}
 
